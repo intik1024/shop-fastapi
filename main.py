@@ -319,6 +319,62 @@ def clear_my_cart(
 
     return {"message": f"Your cart cleared. Removed {deleted} items"}
 
+@app.post('/orders', response_model=OrderResponse)
+def create_order(
+        order_data: OrderCreate,
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)
+):
+    if not order_data.items:
+        raise HTTPException(status_code=400, detail='No items in order')
+
+    total_price = Decimal('0')
+    order_items = []
+
+    for item_data in order_data.items:
+        product = db.query(Product).filter(Product.id == item_data.product_id).first()
+        if not product:
+            raise HTTPException(status_code=404, detail=f'Product {item_data.product_id} not found')
+
+        if product.stock < item_data.quantity:
+            raise HTTPException(
+                status_code=400,
+                detail=f'Not enough stock for product: {product.name}. Available: {product.stock}'
+            )
+
+        product.stock -= item_data.quantity
+        total_price += product.price * item_data.quantity
+
+        order_items.append({
+            "product_id": product.id,
+            "quantity": item_data.quantity,
+            "price_at_time": product.price,
+            "product_name": product.name
+        })
+
+    order = models.Order(
+        user_id=current_user.id,
+        total_price=total_price,
+        delivery_address=order_data.delivery_address,
+        status=models.OrderStatus.CREATED
+    )
+    db.add(order)
+    db.flush()
+
+    for item in order_items:
+        order_item = models.OrderItem(
+            order_id=order.id,
+            product_id=item["product_id"],
+            quantity=item["quantity"],
+            price_at_time=item["price_at_time"],
+            product_name=item["product_name"]
+        )
+        db.add(order_item)
+
+    db.commit()
+    db.refresh(order)
+
+    return order
 
 @app.get('/orders/user/{username}', response_model=List[OrderListResponse])
 def get_orders_by_username(
