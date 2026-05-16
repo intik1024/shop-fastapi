@@ -117,7 +117,7 @@ async def root(request: Request):
             <div id="ordersTab" class="tab-content"><div class="cart-section"><h2>📋 Мои заказы</h2><div id="ordersList"></div></div></div>
         </div>
         <script>
-            let API_URL = 'http://127.0.0.1:8000';
+            let API_URL = window.location.origin;
             let token = localStorage.getItem('token');
             let currentUser = null;
             if (token) checkAuth();
