@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
-from models.database import SessionLocal, engine
+from models.database import SessionLocal
 from models import models
 from models.models import Product, Cart, CartItem,User
 from auth import get_current_user, hash_password, verify_password, create_access_token, SECRET_KEY, ALGORITHM
@@ -617,7 +617,6 @@ async def root(request: Request):
         """
     return HTMLResponse(content=html_content, status_code=200)
 
-models.Base.metadata.create_all(bind=engine)
 
 def get_db():
     db = SessionLocal()
@@ -1066,3 +1065,13 @@ def mock_payment(
         'status': order.status,
         'payment_id': payment.id
     }
+
+
+from models.database import get_engine, Base
+
+try:
+    engine = get_engine()
+    Base.metadata.create_all(bind=engine)
+    print("✅ Database tables initialized/verified")
+except Exception as e:
+    print(f"❌ Error initializing database: {e}")
