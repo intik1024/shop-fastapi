@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
-from models.database import SessionLocal
+from models.database import get_db
 from models import models
 from models.models import Product, Cart, CartItem,User
 from auth import get_current_user, hash_password, verify_password, create_access_token, SECRET_KEY, ALGORITHM
